@@ -34,11 +34,18 @@ export async function POST(request: Request) {
       embedColor = 15105570; // Oranye ala FF
     } else if (game === 'roblox') {
       gameName = "📦 ROBLOX";
-      accountFormat = `${userId || '-'}`; // Untuk Roblox, data login gabungan langsung ditampilkan rapi
+      // Membungkus data login gabungan dengan block code agar tidak merusak format markdown Discord
+      accountFormat = `\`\`\`text\n${userId || '-'}\n\`\`\``; 
       embedColor = 15158332; // Merah ala Roblox
     }
 
-    // 3. Menyusun struktur pesan & embeds untuk webhook Discord (Proteksi || '-')
+    // 3. Format nomor WhatsApp agar link wa.me valid (mengubah 08xxx menjadi 628xxx)
+    const formattedWhatsapp = whatsapp ? whatsapp.trim().replace(/^0/, '62').replace(/[^\d]/g, '') : '';
+    const waLink = formattedWhatsapp 
+      ? `[Hubungi Pembeli](https://wa.me/${formattedWhatsapp}) (\`${whatsapp}\`)` 
+      : `\`${whatsapp || '-'}\``;
+
+    // 4. Menyusun struktur pesan & embeds untuk webhook Discord
     const discordMessage = {
       content: `🔔 **ADA PESANAN TOP-UP BARU - ${gameName}** 🔔`,
       embeds: [
@@ -50,7 +57,7 @@ export async function POST(request: Request) {
             { name: "💳 Metode Pembayaran", value: `🏦 ${payment?.toUpperCase() || '-'}`, inline: true },
             { name: "💎 Nominal", value: `\`${nominal || '-'}\``, inline: true },
             { name: "👤 Data Akun", value: accountFormat, inline: false },
-            { name: "📱 No. WhatsApp", value: `[Hubungi Pembeli](https://wa.me/${whatsapp}) (\`${whatsapp || '-'}\`)`, inline: false },
+            { name: "📱 No. WhatsApp", value: waLink, inline: false },
           ],
           timestamp: new Date().toISOString(),
           footer: {
@@ -60,7 +67,7 @@ export async function POST(request: Request) {
       ],
     };
 
-    // 4. Mengirimkan payload data bersih ke Discord Webhook
+    // 5. Mengirimkan payload data bersih ke Discord Webhook
     const res = await fetch(DISCORD_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
