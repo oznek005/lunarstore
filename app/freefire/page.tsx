@@ -51,7 +51,6 @@ export default function FreeFirePage() {
     { id: 'qris', name: 'QRIS (ALL PAYMENT)', image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg' },
     { id: 'dana', name: 'DANA', image: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dana_blue.svg' },
     { id: 'gopay', name: 'GOPAY', image: 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg' },
-    { id: 'bank_jago', name: 'BANK JAGO', image: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Logo_Bank_Jago.svg' },
   ];
 
   const handlePayment = async () => {
