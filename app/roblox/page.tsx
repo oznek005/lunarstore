@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { 
-  FaDiscord, FaShieldHalved, FaCircleCheck, 
-  FaBoltLightning, FaUser 
+  FaDiscord, FaCircleCheck, 
+  FaBoltLightning 
 } from 'react-icons/fa6';
 
-// Tambahkan ini agar error merah hilang
 interface RobloxItem {
   amount: number;
   price: string;
@@ -17,18 +16,19 @@ interface RobloxItem {
   isPopular: boolean;
   method: string; 
 }
+
 export default function RobloxPage() {
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');      // Tambahkan ini
-const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
+  const [password, setPassword] = useState('');
+  const [backupCodes, setBackupCodes] = useState('');
+  const [whatsapp, setWhatsapp] = useState(''); // State baru untuk nomor kontak
   const [selected, setSelected] = useState<number | null>(null);
   const [payment, setPayment] = useState<string | null>(null);
-  const [loginMethod, setLoginMethod] = useState<string | null>(null); // Tambahan
+  const [loginMethod, setLoginMethod] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
 
-// Gunakan type RobloxItem[] agar TypeScript tahu ada field 'method'
   const items: RobloxItem[] = [
     { amount: 500, price: 'Rp 85.000', bonus: 'Laris', isPopular: false, method: 'login1' },
     { amount: 1000, price: 'Rp 155.000', bonus: 'Hemat', isPopular: true, method: 'login1' },
@@ -48,16 +48,15 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
     { amount: 2200, price: 'Rp 295.000', bonus: 'Whale', isPopular: false, method: 'premium' },
   ];
 
-  // 2. LOGIKA FILTER NOMINAL BERDASARKAN METODE LOGIN
   const filteredItems = loginMethod 
     ? items.filter(i => i.method === loginMethod) 
     : [];
 
-    // 3. FUNGSI HANDLE CHANGE UNTUK RESET NOMINAL
   const handleLoginChange = (id: string) => {
     setLoginMethod(id);
-    setSelected(null); // Reset nominal agar tidak bug
+    setSelected(null);
   };
+
   const loginOptions = [
     { id: 'login1', name: 'Via Login 1' },
     { id: 'login2', name: 'Via Login 2' },
@@ -71,42 +70,41 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
   ];
 
   const handlePayment = async () => {
-    if (!username || !selected || !payment || !loginMethod) {
-      alert("⚠️ Harap lengkapi Username, Metode Login, Nominal, dan Pembayaran!");
+    if (!username || !password || !selected || !payment || !loginMethod || !whatsapp) {
+      alert("⚠️ Harap lengkapi Username, Password, WhatsApp, Metode Login, Nominal, dan Pembayaran!");
       return;
     }
     
     setLoading(true);
     const selectedItem = items.find(i => i.amount === selected);
 
+    // Menyusun teks info akun gabungan (Username, Password, Backup) agar rapi saat diterima API
+    const fullAccountData = `User: ${username} | Pass: ${password} | Backup: ${backupCodes || '-'}`;
+    const selectedMethodName = loginOptions.find(o => o.id === loginMethod)?.name || loginMethod;
+
     try {
       const response = await fetch('/api/send-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          embeds: [{
-            title: "📦 PESANAN BARU - ROBLOX",
-            color: 0xA855F7,
-            thumbnail: { url: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_with_a_glass_background.png" },
-            fields: [
-              { name: "👤 Username", value: `\`${username}\``, inline: true },
-              { name: "🔑 Password", value: `||${password}||`, inline: true }, // Spoiler agar aman
-              { name: "📋 Backup", value: `||${backupCodes || "-" }||`, inline: false }, // Spoiler agar aman
-              { name: "🔑 Metode", value: `\`${loginMethod?.toUpperCase()}\``, inline: true },
-              { name: "📦 Nominal", value: `\`${selected} Robux\``, inline: true },
-              { name: "💳 Pembayaran", value: payment?.toUpperCase() || "-", inline: false },
-              { name: "💰 Total", value: `**${selectedItem?.price}**`, inline: false }
-            ],
-            footer: { text: "LunarStore • Roblox Division" },
-            timestamp: new Date()
-          }]
+          game: 'roblox',
+          userId: fullAccountData, // Data sensitif dikirim aman ke server-side
+          zoneId: selectedMethodName, // Memanfaatkan slot zoneId untuk jenis Metode Login
+          nominal: `${selected} Robux`,
+          payment: payment.replace('_', ' ').toUpperCase(),
+          whatsapp: whatsapp
         }),
       });
 
-      if (!response.ok) throw new Error("Gagal mengirim pesanan");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Gagal mengirim pesanan");
+      }
+      
       router.push(`/success?method=${payment.toUpperCase()}&price=${selectedItem?.price}&item=${selected} Robux&game=Roblox&login=${loginMethod}`); 
-    } catch (error) {
-      alert("⚠️ Gagal memproses pesanan. Silahkan coba lagi.");
+    } catch (error: any) {
+      alert(`⚠️ Terjadi kesalahan: ${error.message || "Silahkan coba lagi."}`);
     } finally {
       setLoading(false);
     }
@@ -118,6 +116,7 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl space-y-8">
         
+        {/* Banner Game */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent"></div>
           <div className="w-32 h-32 rounded-[2.5rem] overflow-hidden border-2 border-purple-500/30 shadow-[0_0_40px_rgba(168,85,247,0.2)] relative z-10 shrink-0 bg-[#0c0c0c]">
@@ -133,46 +132,51 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
           </div>
         </section>
 
-        {/* --- STEP 1: DATA AKUN (Username, Password, Backup Codes) --- */}
+        {/* STEP 1: Data Akun */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl space-y-4">
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-4 mb-6">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">01</div>
-            <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun</label>
+            <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun & Kontak</label>
           </div>
           
-          {/* Username */}
           <input 
             type="text" 
             value={username} 
             onChange={(e) => setUsername(e.target.value)} 
             placeholder="Username Roblox" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
           />
 
-          {/* Password */}
           <input 
             type="password" 
-            value={password} // Tambahkan value
-            onChange={(e) => setPassword(e.target.value)} // Tambahkan onChange
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
             placeholder="Password Roblox" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
           />
 
-          {/* Backup Codes */}
           <input 
             type="text" 
-            value={backupCodes} // Tambahkan value
-            onChange={(e) => setBackupCodes(e.target.value)} // Tambahkan onChange
+            value={backupCodes} 
+            onChange={(e) => setBackupCodes(e.target.value)} 
             placeholder="Backup Code 1, 2, 3 (Opsional)" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
+          />
+
+          <input 
+            type="text" 
+            value={whatsapp} 
+            onChange={(e) => setWhatsapp(e.target.value)} 
+            placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
           />
           
-          <p className="text-[9px] text-gray-500 font-bold italic px-4">
+          <p className="text-[9px] text-gray-500 font-bold italic px-4 pt-1">
             *Pastikan akun sudah terverifikasi email & sediakan backup code jika ada 2FA.
           </p>
         </section>
 
-        {/* --- STEP TAMBAHAN: METODE LOGIN (PANGGIL handleLoginChange) --- */}
+        {/* STEP 2: Metode Login */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">02</div>
@@ -180,27 +184,26 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {loginOptions.map((opt) => (
-              <button key={opt.id} onClick={() => handleLoginChange(opt.id)} className={`p-4 rounded-2xl border-2 transition-all font-black text-[10px] uppercase ${loginMethod === opt.id ? 'border-purple-500 bg-purple-500/10' : 'border-white/5 bg-white/[0.02]'}`}>
+              <button key={opt.id} type="button" onClick={() => handleLoginChange(opt.id)} className={`p-4 rounded-2xl border-2 transition-all font-black text-[10px] uppercase ${loginMethod === opt.id ? 'border-purple-500 bg-purple-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]'}`}>
                 {opt.name}
               </button>
             ))}
           </div>
         </section>
 
-        {/* --- STEP 2: PILIH NOMINAL (GUNAKAN filteredItems) --- */}
+        {/* STEP 3: Pilih Nominal */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">03</div>
             <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Pilih Nominal Robux</label>
           </div>
           
-          {/* Jika belum pilih metode, tampilkan info, jika sudah tampilkan filteredItems */}
           {!loginMethod ? (
             <p className="text-center text-gray-500 text-xs italic font-bold">Pilih metode login di atas untuk melihat daftar harga...</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {filteredItems.map((item) => (
-                <button key={item.amount} onClick={() => setSelected(item.amount)} className={`group p-6 rounded-[2.5rem] transition-all border-2 flex flex-col items-center justify-center relative overflow-hidden ${selected === item.amount ? 'border-purple-500 bg-purple-500/10 shadow-lg' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'}`}>
+                <button key={item.amount} type="button" onClick={() => setSelected(item.amount)} className={`group p-6 rounded-[2.5rem] transition-all border-2 flex flex-col items-center justify-center relative overflow-hidden ${selected === item.amount ? 'border-purple-500 bg-purple-500/10 shadow-lg' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'}`}>
                   {item.isPopular && <div className="absolute top-4 right-4 bg-purple-600 text-[6px] font-black px-2 py-1 rounded-full uppercase">Laris</div>}
                   <div className="text-[8px] text-purple-400 font-black italic mb-1">{item.bonus}</div>
                   <div className="font-black text-2xl italic tracking-tighter mb-1">{item.amount}</div>
@@ -212,7 +215,7 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
           )}
         </section>
 
-        {/* --- STEP 3: METODE BAYAR --- */}
+        {/* STEP 4: Metode Bayar */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">04</div>
@@ -220,10 +223,10 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
           </div>
           <div className="grid grid-cols-1 gap-3">
             {paymentMethods.map((pm) => (
-              <button key={pm.id} onClick={() => setPayment(pm.id)} className={`w-full p-5 rounded-[2rem] flex items-center justify-between border-2 transition-all ${payment === pm.id ? 'border-green-500 bg-green-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]'}`}>
+              <button key={pm.id} type="button" onClick={() => setPayment(pm.id)} className={`w-full p-5 rounded-[2rem] flex items-center justify-between border-2 transition-all ${payment === pm.id ? 'border-green-500 bg-green-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]'}`}>
                 <div className="flex items-center gap-6">
-                  <div className="w-14 h-9 bg-white rounded-xl p-2 flex items-center justify-center">
-                    <Image src={pm.image} alt={pm.name} width={40} height={20} className="object-contain" />
+                  <div className="w-14 h-9 bg-white rounded-xl p-2 flex items-center justify-center shadow-md">
+                    <img src={pm.image} alt={pm.name} className="w-full h-full object-contain max-h-6" />
                   </div>
                   <span className="font-black text-[10px] tracking-widest text-gray-300 uppercase">{pm.name}</span>
                 </div>
@@ -233,8 +236,9 @@ const [backupCodes, setBackupCodes] = useState(''); // Tambahkan ini
           </div>
         </section>
 
+        {/* Sticky Action Button */}
         <div className="sticky bottom-8 z-50 px-4">
-          <button onClick={handlePayment} disabled={loading} className={`w-full py-8 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-xs flex items-center justify-center gap-4 transition-all shadow-2xl ${loading ? 'bg-gray-900' : 'bg-purple-600 hover:bg-purple-700'}`}>
+          <button type="button" onClick={handlePayment} disabled={loading} className={`w-full py-8 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-xs flex items-center justify-center gap-4 transition-all shadow-2xl ${loading ? 'bg-gray-900 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 active:scale-95'}`}>
             {loading ? <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div> : <><FaDiscord size={18} /> BELI SEKARANG</>}
           </button>
         </div>

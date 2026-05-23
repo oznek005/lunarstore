@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { 
   FaDiscord, FaShieldHalved, FaCircleCheck, 
-  FaBoltLightning, FaCircleInfo, FaIdCard 
+  FaBoltLightning, FaIdCard 
 } from 'react-icons/fa6';
 
 interface GameItem {
@@ -16,15 +16,16 @@ interface GameItem {
   isPopular: boolean;
   method: string;
 }
+
 export default function FreeFirePage() {
   const [id, setId] = useState('');
+  const [whatsapp, setWhatsapp] = useState(''); // State baru untuk nomor kontak WhatsApp
   const [selected, setSelected] = useState<number | null>(null);
   const [payment, setPayment] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
 
-  // Data Free Fire disesuaikan dengan Price List
   const items: GameItem[] = [
     // SMALL PACK
     { amount: 70, price: 'Rp 9.872', bonus: 'Small', isPopular: false, method: 'ff_id' },
@@ -53,9 +54,8 @@ export default function FreeFirePage() {
   ];
 
   const handlePayment = async () => {
-    // 1. Validasi Input
-    if (!id || !selected || !payment) {
-      alert("⚠️ Harap lengkapi Player ID, Nominal, dan Pembayaran!");
+    if (!id || !selected || !payment || !whatsapp) {
+      alert("⚠️ Harap lengkapi Player ID, WhatsApp, Nominal, dan Pembayaran!");
       return;
     }
     
@@ -63,34 +63,30 @@ export default function FreeFirePage() {
     const selectedItem = items.find(i => i.amount === selected);
 
     try {
-      // 2. Kirim ke API Internal (Menyembunyikan Webhook URL dari Client)
+      // Mengirimkan payload bersih universal ke API send-order
       const response = await fetch('/api/send-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          embeds: [{
-            title: "🔥 PESANAN BARU - FREE FIRE",
-            color: 0xF97316, 
-            thumbnail: { url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6fL-3yG2XN1eG0W8Y_7n4iVl5uS9_Pz5nRA&s" },
-            fields: [
-              { name: "🆔 Player ID", value: `\`${id}\``, inline: true },
-              { name: "💎 Nominal", value: `\`${selected} Diamonds\``, inline: true },
-              { name: "💳 Pembayaran", value: payment.toUpperCase(), inline: false },
-              { name: "💰 Total Bayar", value: `**${selectedItem?.price}**`, inline: false }
-            ],
-            footer: { text: "LunarStore • Real-time Order" },
-            timestamp: new Date()
-          }]
+          game: 'freefire',
+          userId: id,
+          zoneId: '-', // Free Fire tidak menggunakan Zone ID, diisi tanda strip agar valid
+          nominal: `${selected} Diamonds`,
+          payment: payment.replace('_', ' ').toUpperCase(),
+          whatsapp: whatsapp
         }),
       });
 
-      if (!response.ok) throw new Error("Gagal mengirim pesanan");
+      const result = await response.json();
 
-      // 3. Redirect ke Halaman Sukses
+      if (!response.ok) {
+        throw new Error(result.error || "Gagal mengirim pesanan");
+      }
+
+      // Redirect ke Halaman Sukses bawaan
       router.push(`/success?method=${payment.toUpperCase()}&price=${selectedItem?.price}&item=${selected} Diamonds&game=Free Fire`); 
-    } catch (error) {
-      console.error(error);
-      alert("⚠️ Terjadi kesalahan saat memproses pesanan. Silahkan coba lagi.");
+    } catch (error: any) {
+      alert(`⚠️ Terjadi kesalahan: ${error.message || "Silahkan coba lagi."}`);
     } finally {
       setLoading(false);
     }
@@ -130,14 +126,15 @@ export default function FreeFirePage() {
           </div>
         </section>
 
-        {/* STEP 1: PLAYER ID */}
-        <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl">
-          <div className="flex items-center justify-between mb-8">
+        {/* STEP 1: PLAYER ID & WHATSAPP */}
+        <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl space-y-4">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-orange-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(249,115,22,0.4)]">01</div>
-              <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun</label>
+              <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun & Kontak</label>
             </div>
           </div>
+          
           <div className="relative group">
             <input 
               type="number" 
@@ -148,6 +145,14 @@ export default function FreeFirePage() {
             />
             <FaIdCard className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-800 group-focus-within:text-orange-500" />
           </div>
+
+          <input 
+            type="text" 
+            value={whatsapp} 
+            onChange={(e) => setWhatsapp(e.target.value)} 
+            placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 focus:border-orange-500/50 outline-none text-sm transition-all font-bold placeholder:text-gray-800" 
+          />
         </section>
 
         {/* STEP 2: NOMINAL */}
@@ -160,6 +165,7 @@ export default function FreeFirePage() {
             {items.map((item) => (
               <button 
                 key={item.amount} 
+                type="button"
                 onClick={() => setSelected(item.amount)} 
                 className={`group p-6 rounded-[2.5rem] transition-all border-2 flex flex-col items-center justify-center relative overflow-hidden ${
                   selected === item.amount 
@@ -193,6 +199,7 @@ export default function FreeFirePage() {
             {paymentMethods.map((pm) => (
               <button
                 key={pm.id}
+                type="button"
                 onClick={() => setPayment(pm.id)}
                 className={`w-full p-5 rounded-[2rem] flex items-center justify-between border-2 transition-all ${
                   payment === pm.id 
@@ -201,8 +208,8 @@ export default function FreeFirePage() {
                 }`}
               >
                 <div className="flex items-center gap-6">
-                  <div className="w-14 h-9 bg-white rounded-xl p-2 flex items-center justify-center">
-                    <Image src={pm.image} alt={pm.name} width={40} height={20} className="object-contain" />
+                  <div className="w-14 h-9 bg-white rounded-xl p-2 flex items-center justify-center shadow-md">
+                    <img src={pm.image} alt={pm.name} className="w-full h-full object-contain max-h-6" />
                   </div>
                   <span className="font-black text-[10px] tracking-widest text-gray-300 uppercase">{pm.name}</span>
                 </div>
@@ -215,18 +222,19 @@ export default function FreeFirePage() {
         {/* STICKY BUTTON */}
         <div className="sticky bottom-8 z-50 px-4">
           <button 
+            type="button"
             onClick={handlePayment} 
             disabled={loading} 
             className={`w-full py-8 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-xs flex items-center justify-center gap-4 transition-all shadow-2xl group relative overflow-hidden ${
-              loading ? 'bg-gray-900 cursor-not-allowed text-gray-600' : 'bg-[#5b68f3] hover:bg-[#4752C4] active:scale-95 text-white'
+              loading ? 'bg-gray-900 cursor-not-allowed text-gray-600' : 'bg-orange-600 hover:bg-orange-700 active:scale-95 text-white'
             }`}
           >
             {loading ? (
-                <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
             ) : (
-                <>
-                  <FaDiscord size={18} /> BELI SEKARANG
-                </>
+              <>
+                <FaDiscord size={18} /> BELI SEKARANG
+              </>
             )}
           </button>
         </div>
@@ -239,4 +247,4 @@ export default function FreeFirePage() {
       </motion.div>
     </main>
   );
-} 
+}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { 
-  FaDiscord, FaShieldHalved, FaCircleCheck, 
+  FaDiscord, FaCircleCheck, 
   FaBoltLightning 
 } from 'react-icons/fa6';
 
@@ -23,7 +23,7 @@ export default function MobileLegendsPage() {
   const [loading, setLoading] = useState(false);
   const [gameId, setGameId] = useState('');
   const [zoneId, setZoneId] = useState('');
-  // Set default ke 'ml_id' agar input ID & Zone ID langsung muncul
+  const [whatsapp, setWhatsapp] = useState(''); // Menambahkan state WhatsApp pembeli
   const [loginMethod] = useState<string>('ml_id'); 
   const router = useRouter();
 
@@ -47,8 +47,8 @@ export default function MobileLegendsPage() {
   ];
 
   const handlePayment = async () => {
-    if (!gameId || !zoneId || !selected || !payment) {
-      alert("⚠️ Harap lengkapi ID, Zone ID, Nominal, dan Pembayaran!");
+    if (!gameId || !zoneId || !selected || !payment || !whatsapp) {
+      alert("⚠️ Harap lengkapi ID, Zone ID, WhatsApp, Nominal, dan Pembayaran!");
       return;
     }
     
@@ -56,32 +56,30 @@ export default function MobileLegendsPage() {
     const selectedItem = items.find(i => i.amount === selected);
 
     try {
+      // Mengirimkan objek data bersih yang dinamis ke API route baru
       const response = await fetch('/api/send-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          embeds: [{
-            title: "⚔️ PESANAN BARU - MLBB",
-            color: 0xA855F7,
-            thumbnail: { url: "https://upload.wikimedia.org/wikipedia/en/thumb/8/8d/Mobile_Legends_Bang_Bang_logo.png/250px-Mobile_Legends_Bang_Bang_logo.png" },
-            fields: [
-              { name: "🎮 Game ID", value: `\`${gameId}\``, inline: true },
-              { name: "📍 Zone ID", value: `\`${zoneId}\``, inline: true },
-              { name: "📦 Nominal", value: `\`${selected} Diamonds\``, inline: true },
-              { name: "💳 Pembayaran", value: payment?.toUpperCase() || "-", inline: false },
-              { name: "💰 Total", value: `**${selectedItem?.price}**`, inline: false }
-            ],
-            footer: { text: "LunarStore • MLBB Division" },
-            timestamp: new Date()
-          }]
+          game: 'mobilelegends',
+          userId: gameId,
+          zoneId: zoneId,
+          nominal: `${selected} Diamonds`,
+          payment: payment.replace('_', ' ').toUpperCase(),
+          whatsapp: whatsapp
         }),
       });
 
-      if (!response.ok) throw new Error("Gagal kirim pesanan");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Gagal kirim pesanan");
+      }
       
+      // Mengarahkan ke halaman sukses bawaan dengan parameter data
       router.push(`/success?method=${payment.toUpperCase()}&price=${selectedItem?.price}&item=${selected} Diamonds&game=Mobile Legends`); 
-    } catch (error) {
-      alert("⚠️ Terjadi kesalahan. Silahkan coba lagi nanti.");
+    } catch (error: any) {
+      alert(`⚠️ Terjadi kesalahan: ${error.message || "Silahkan coba lagi nanti."}`);
     } finally {
       setLoading(false);
     }
@@ -93,6 +91,7 @@ export default function MobileLegendsPage() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl space-y-8">
         
+        {/* Banner Utama */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent"></div>
           <div className="w-32 h-32 rounded-[2.5rem] overflow-hidden border-2 border-purple-500/30 shadow-[0_0_40px_rgba(168,85,247,0.2)] relative z-10 shrink-0">
@@ -106,19 +105,24 @@ export default function MobileLegendsPage() {
           </div>
         </section>
 
+        {/* STEP 1: Input Data Akun & WhatsApp */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl space-y-4">
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-4 mb-6">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">01</div>
-            <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun</label>
+            <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun & Kontak</label>
           </div>
           {loginMethod === 'ml_id' && (
-            <div className="flex gap-4">
-              <input type="text" value={gameId} onChange={(e) => setGameId(e.target.value)} placeholder="ID" className="w-1/2 bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold" />
-              <input type="text" value={zoneId} onChange={(e) => setZoneId(e.target.value)} placeholder="Zone ID" className="w-1/2 bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold" />
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <input type="text" value={gameId} onChange={(e) => setGameId(e.target.value)} placeholder="User ID" className="w-1/2 bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" />
+                <input type="text" value={zoneId} onChange={(e) => setZoneId(e.target.value)} placeholder="Zone ID" className="w-1/2 bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" />
+              </div>
+              <input type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" />
             </div>
           )}
         </section>
 
+        {/* STEP 2: Pilih Nominal */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">02</div>
@@ -126,7 +130,7 @@ export default function MobileLegendsPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {items.map((item) => (
-              <button key={item.amount} onClick={() => setSelected(item.amount)} className={`group p-6 rounded-[2.5rem] transition-all border-2 flex flex-col items-center justify-center relative overflow-hidden ${selected === item.amount ? 'border-purple-500 bg-purple-500/10' : 'border-white/5 bg-white/[0.02]'}`}>
+              <button key={item.amount} type="button" onClick={() => setSelected(item.amount)} className={`group p-6 rounded-[2.5rem] transition-all border-2 flex flex-col items-center justify-center relative overflow-hidden ${selected === item.amount ? 'border-purple-500 bg-purple-500/10' : 'border-white/5 bg-white/[0.02]'}`}>
                 {item.isPopular && <div className="absolute top-4 right-4 bg-purple-600 text-[6px] font-black px-2 py-1 rounded-full uppercase">Laris</div>}
                 <div className="text-[8px] text-purple-400 font-black italic mb-1">{item.bonus}</div>
                 <div className="font-black text-2xl italic tracking-tighter mb-1">{item.amount}</div>
@@ -137,6 +141,7 @@ export default function MobileLegendsPage() {
           </div>
         </section>
 
+        {/* STEP 3: Metode Bayar */}
         <section className="bg-[#0c0c0c] rounded-[3rem] border border-white/5 p-8 md:p-10 shadow-xl">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">03</div>
@@ -144,9 +149,11 @@ export default function MobileLegendsPage() {
           </div>
           <div className="grid grid-cols-1 gap-3">
             {paymentMethods.map((pm) => (
-              <button key={pm.id} onClick={() => setPayment(pm.id)} className={`w-full p-5 rounded-[2rem] flex items-center justify-between border-2 transition-all ${payment === pm.id ? 'border-green-500 bg-green-500/10' : 'border-white/5 bg-white/[0.02]'}`}>
+              <button key={pm.id} type="button" onClick={() => setPayment(pm.id)} className={`w-full p-5 rounded-[2rem] flex items-center justify-between border-2 transition-all ${payment === pm.id ? 'border-green-500 bg-green-500/10' : 'border-white/5 bg-white/[0.02]'}`}>
                 <div className="flex items-center gap-6">
-                  <div className="w-14 h-9 bg-white rounded-xl p-2 flex items-center justify-center shadow-md"><Image src={pm.image} alt={pm.name} width={40} height={20} className="object-contain" /></div>
+                  <div className="w-14 h-9 bg-white rounded-xl p-2 flex items-center justify-center shadow-md">
+                    <img src={pm.image} alt={pm.name} className="w-full h-full object-contain max-h-6" />
+                  </div>
                   <span className="font-black text-[10px] tracking-widest text-gray-300 uppercase">{pm.name}</span>
                 </div>
                 {payment === pm.id && <FaCircleCheck className="text-green-500 text-xl" />}
@@ -155,8 +162,9 @@ export default function MobileLegendsPage() {
           </div>
         </section>
 
+        {/* Sticky Button Aksi */}
         <div className="sticky bottom-8 z-50 px-4">
-          <button onClick={handlePayment} disabled={loading} className={`w-full py-8 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-xs flex items-center justify-center gap-4 transition-all ${loading ? 'bg-gray-900' : 'bg-purple-600 hover:bg-purple-700 active:scale-95'}`}>
+          <button type="button" onClick={handlePayment} disabled={loading} className={`w-full py-8 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-xs flex items-center justify-center gap-4 transition-all ${loading ? 'bg-gray-900 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 active:scale-95'}`}>
             {loading ? <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div> : <><FaDiscord size={18} /> BELI SEKARANG</>}
           </button>
         </div>
