@@ -21,7 +21,7 @@ export default function RobloxPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [backupCodes, setBackupCodes] = useState('');
-  const [whatsapp, setWhatsapp] = useState(''); // State baru untuk nomor kontak
+  const [whatsapp, setWhatsapp] = useState(''); 
   const [selected, setSelected] = useState<number | null>(null);
   const [payment, setPayment] = useState<string | null>(null);
   const [loginMethod, setLoginMethod] = useState<string | null>(null);
@@ -78,7 +78,6 @@ export default function RobloxPage() {
     setLoading(true);
     const selectedItem = items.find(i => i.amount === selected);
 
-    // Menyusun teks info akun gabungan (Username, Password, Backup) agar rapi saat diterima API
     const fullAccountData = `User: ${username} | Pass: ${password} | Backup: ${backupCodes || '-'}`;
     const selectedMethodName = loginOptions.find(o => o.id === loginMethod)?.name || loginMethod;
 
@@ -88,8 +87,8 @@ export default function RobloxPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           game: 'roblox',
-          userId: fullAccountData, // Data sensitif dikirim aman ke server-side
-          zoneId: selectedMethodName, // Memanfaatkan slot zoneId untuk jenis Metode Login
+          userId: fullAccountData, 
+          zoneId: selectedMethodName, 
           nominal: `${selected} Robux`,
           payment: payment.replace('_', ' ').toUpperCase(),
           whatsapp: whatsapp
@@ -144,7 +143,7 @@ export default function RobloxPage() {
             value={username} 
             onChange={(e) => setUsername(e.target.value)} 
             placeholder="Username Roblox" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700" 
           />
 
           <input 
@@ -152,7 +151,7 @@ export default function RobloxPage() {
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
             placeholder="Password Roblox" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700" 
           />
 
           <input 
@@ -160,15 +159,15 @@ export default function RobloxPage() {
             value={backupCodes} 
             onChange={(e) => setBackupCodes(e.target.value)} 
             placeholder="Backup Code 1, 2, 3 (Opsional)" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700" 
           />
 
           <input 
-            type="text" 
+            type="number" 
             value={whatsapp} 
             onChange={(e) => setWhatsapp(e.target.value)} 
             placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
           />
           
           <p className="text-[9px] text-gray-500 font-bold italic px-4 pt-1">

@@ -23,7 +23,7 @@ export default function MobileLegendsPage() {
   const [loading, setLoading] = useState(false);
   const [gameId, setGameId] = useState('');
   const [zoneId, setZoneId] = useState('');
-  const [whatsapp, setWhatsapp] = useState(''); // Menambahkan state WhatsApp pembeli
+  const [whatsapp, setWhatsapp] = useState(''); 
   const [loginMethod] = useState<string>('ml_id'); 
   const router = useRouter();
 
@@ -56,7 +56,6 @@ export default function MobileLegendsPage() {
     const selectedItem = items.find(i => i.amount === selected);
 
     try {
-      // Mengirimkan objek data bersih yang dinamis ke API route baru
       const response = await fetch('/api/send-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,7 +75,6 @@ export default function MobileLegendsPage() {
         throw new Error(result.error || "Gagal kirim pesanan");
       }
       
-      // Mengarahkan ke halaman sukses bawaan dengan parameter data
       router.push(`/success?method=${payment.toUpperCase()}&price=${selectedItem?.price}&item=${selected} Diamonds&game=Mobile Legends`); 
     } catch (error: any) {
       alert(`⚠️ Terjadi kesalahan: ${error.message || "Silahkan coba lagi nanti."}`);
@@ -111,13 +109,32 @@ export default function MobileLegendsPage() {
             <div className="w-10 h-10 bg-purple-600 rounded-2xl flex items-center justify-center text-xs font-black italic shadow-[0_0_20px_rgba(168,85,247,0.4)]">01</div>
             <label className="text-xs font-black text-white uppercase tracking-[0.2em]">Data Akun & Kontak</label>
           </div>
+          
           {loginMethod === 'ml_id' && (
             <div className="space-y-4">
-              <div className="flex gap-4">
-                <input type="text" value={gameId} onChange={(e) => setGameId(e.target.value)} placeholder="User ID" className="w-1/2 bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" />
-                <input type="text" value={zoneId} onChange={(e) => setZoneId(e.target.value)} placeholder="Zone ID" className="w-1/2 bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" />
+              <div className="grid grid-cols-2 gap-4">
+                <input 
+                  type="text" 
+                  value={gameId} 
+                  onChange={(e) => setGameId(e.target.value)} 
+                  placeholder="User ID" 
+                  className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700" 
+                />
+                <input 
+                  type="text" 
+                  value={zoneId} 
+                  onChange={(e) => setZoneId(e.target.value)} 
+                  placeholder="Zone ID" 
+                  className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700" 
+                />
               </div>
-              <input type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors" />
+              <input 
+                type="number" 
+                value={whatsapp} 
+                onChange={(e) => setWhatsapp(e.target.value)} 
+                placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" 
+                className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 outline-none text-sm font-bold focus:border-purple-500/50 transition-colors placeholder:text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+              />
             </div>
           )}
         </section>

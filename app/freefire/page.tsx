@@ -19,7 +19,7 @@ interface GameItem {
 
 export default function FreeFirePage() {
   const [id, setId] = useState('');
-  const [whatsapp, setWhatsapp] = useState(''); // State baru untuk nomor kontak WhatsApp
+  const [whatsapp, setWhatsapp] = useState(''); 
   const [selected, setSelected] = useState<number | null>(null);
   const [payment, setPayment] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +51,7 @@ export default function FreeFirePage() {
     { id: 'qris', name: 'QRIS (ALL PAYMENT)', image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg' },
     { id: 'dana', name: 'DANA', image: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dana_blue.svg' },
     { id: 'gopay', name: 'GOPAY', image: 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg' },
+    { id: 'bank_jago', name: 'BANK JAGO', image: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Logo_Bank_Jago.svg' },
   ];
 
   const handlePayment = async () => {
@@ -63,14 +64,13 @@ export default function FreeFirePage() {
     const selectedItem = items.find(i => i.amount === selected);
 
     try {
-      // Mengirimkan payload bersih universal ke API send-order
       const response = await fetch('/api/send-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           game: 'freefire',
           userId: id,
-          zoneId: '-', // Free Fire tidak menggunakan Zone ID, diisi tanda strip agar valid
+          zoneId: '-', 
           nominal: `${selected} Diamonds`,
           payment: payment.replace('_', ' ').toUpperCase(),
           whatsapp: whatsapp
@@ -83,7 +83,6 @@ export default function FreeFirePage() {
         throw new Error(result.error || "Gagal mengirim pesanan");
       }
 
-      // Redirect ke Halaman Sukses bawaan
       router.push(`/success?method=${payment.toUpperCase()}&price=${selectedItem?.price}&item=${selected} Diamonds&game=Free Fire`); 
     } catch (error: any) {
       alert(`⚠️ Terjadi kesalahan: ${error.message || "Silahkan coba lagi."}`);
@@ -141,17 +140,17 @@ export default function FreeFirePage() {
               value={id} 
               onChange={(e) => setId(e.target.value)} 
               placeholder="Masukkan Player ID" 
-              className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 focus:border-orange-500/50 outline-none text-sm transition-all font-bold tracking-[0.2em] placeholder:text-gray-800" 
+              className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 focus:border-orange-500/50 outline-none text-sm transition-all font-bold tracking-[0.2em] placeholder:text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
             />
-            <FaIdCard className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-800 group-focus-within:text-orange-500" />
+            <FaIdCard className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-orange-500" />
           </div>
 
           <input 
-            type="text" 
+            type="number" 
             value={whatsapp} 
             onChange={(e) => setWhatsapp(e.target.value)} 
             placeholder="Nomor WhatsApp (Contoh: 081234567xxx)" 
-            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 focus:border-orange-500/50 outline-none text-sm transition-all font-bold placeholder:text-gray-800" 
+            className="w-full bg-white/[0.03] px-8 py-6 rounded-3xl border border-white/5 focus:border-orange-500/50 outline-none text-sm transition-all font-bold placeholder:text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
           />
         </section>
 
